@@ -228,10 +228,12 @@ public:
   mpu6050_highpass_t getHighPassFilter(void);
   void setHighPassFilter(mpu6050_highpass_t bandwidth);
 
+  void setDataReadyInterrupt(bool enable_dri);
   void setMotionInterrupt(bool active);
   void setMotionDetectionThreshold(uint8_t thr);
   void setMotionDetectionDuration(uint8_t dur);
   bool getMotionInterruptStatus(void);
+  void setClearIntrOnRead(bool clear_on_any_read);
 
   mpu6050_fsync_out_t getFsyncSampleOutput(void);
   void setI2CBypass(bool bypass);

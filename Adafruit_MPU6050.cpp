@@ -393,8 +393,25 @@ void Adafruit_MPU6050::setInterruptPinLatch(bool held) {
   Adafruit_BusIO_Register int_pin_config =
       Adafruit_BusIO_Register(i2c_dev, MPU6050_INT_PIN_CONFIG, 1);
   Adafruit_BusIO_RegisterBits int_latch =
-      Adafruit_BusIO_RegisterBits(&int_pin_config, 1, 7);
+      Adafruit_BusIO_RegisterBits(&int_pin_config, 1, 5);
   int_latch.write(held);
+}
+
+
+/**************************************************************************/
+/*!
+*     @brief  Sets how the interrupt is cleared
+*     @param  clear_on_any_read
+              If `true`  clears interrupt on any read operation
+              If `false` clears interrupt when intr_status register is read
+*/
+/**************************************************************************/
+void Adafruit_MPU6050::setClearIntrOnRead(bool clear_on_any_read) {
+  Adafruit_BusIO_Register int_pin_config =
+      Adafruit_BusIO_Register(i2c_dev, MPU6050_INT_PIN_CONFIG, 1);
+  Adafruit_BusIO_RegisterBits int_latch =
+      Adafruit_BusIO_RegisterBits(&int_pin_config, 1, 4);
+  int_latch.write(clear_on_any_read?1:0);
 }
 
 /**************************************************************************/
@@ -411,6 +428,22 @@ void Adafruit_MPU6050::setMotionInterrupt(bool active) {
   Adafruit_BusIO_RegisterBits int_motion =
       Adafruit_BusIO_RegisterBits(&int_enable, 1, 6);
   int_motion.write(active);
+}
+
+/**************************************************************************/
+/*!
+*     @brief  Sets the data ready interrupt
+*     @param  enable_dri
+              If `true`  enables the data ready interrupt
+              If `false` disables the data ready interrupt
+*/
+/**************************************************************************/
+void Adafruit_MPU6050::setDataReadyInterrupt(bool enable_dri) {
+  Adafruit_BusIO_Register int_enable =
+      Adafruit_BusIO_Register(i2c_dev, MPU6050_INT_ENABLE, 1);
+  Adafruit_BusIO_RegisterBits int_data_rdy =
+      Adafruit_BusIO_RegisterBits(&int_enable, 1, 0); // DATA_RDY_EN
+  int_data_rdy.write(enable_dri?1:0);
 }
 
 /**************************************************************************/
