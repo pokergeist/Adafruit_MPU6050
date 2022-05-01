@@ -15,8 +15,8 @@
  * most.
  *
  * Hardware:
- *  * Product ID #3886 - Adafruit MPU-6050 6-DoF Accel and Gyro Sensor,
- *                       STEMMA QT Qwiic
+ *  * Adafruit prodID #3886 -  MPU-6050 6-DoF Accel and Gyro Sensor,
+ *                             STEMMA QT Qwiic
  *  * MCU supporting I2C. Set your GPIO pin below.
  *  * (5) jumper wires - GND, Vcc, SDA, SCL (=STEMMA QT) and INT
  *****************************************************************************/
@@ -42,6 +42,8 @@ void setup() {
   pinMode(IMU_DATA_READY, INPUT);
   pinMode(MCU_ACTIVE, OUTPUT);
   pinMode(LED_BUILTIN, OUTPUT);
+  digitalWrite(MCU_ACTIVE, LOW);
+  digitalWrite(LED_BUILTIN, LOW);
   Serial.begin(9600);             // not really 9600 bps; goes USB speed
   while ((not Serial)             // wait up to 3secs for Serial port setup
          and (millis() < 3e3)) delay(50);
