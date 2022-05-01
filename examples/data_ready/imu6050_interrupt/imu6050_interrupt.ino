@@ -1,23 +1,28 @@
 /*****************************************************************************
- * MPU-6050 Data Ready INT Polling Example
+ * MPU-6050 Data Ready INT Interrupt Handler Example
  *
  * This example demonstrates how to use the INT line from the MPU6050 board
- * to indicate "data ready". It is set by the 6050 when a dataset is ready,
- * and cleared when any of the data or status registers are read.
+ * to trigger an interrupt when the "data ready" signal goes active. It is set
+ * by the 6050 when a dataset is ready, and cleared when any of the data or
+ * status registers are read. It can also be configured as a 50ms pulse to
+ * trigger an interrupt on the MCU.
  *
- * In this case, there is no need to poll the status registers across the I2C
- * buss. Just read the data when it is ready. It's faster to poll a GPIO line
- * than to request and read the status register byte, and you read one less
- * byte of data when there is data.
+ * In this case, there is no need to poll the status register(s) across the
+ * I2C buss. Just enable the interrupt handler to fetch the data when it is
+ * ready and signal the main routine that new data is ready. It's faster than
+ * requestng and reading the status register byte.
  *
- * There's a companion example that uses the data ready INT line as an
- * asynchronous interrupt, but this approach is simpler and good enough for
- * most.
+ * There's a companion example that polls the data ready INT signal level
+ * to determine if a new dataset is ready. This example's approach fetches
+ * the data immediately regardless of background processing (assuming that
+ * interrupts are not disabled). A heavily loaded system could have the ISR
+ * timestamp and queue all data and let the background task select just the
+ * needed datasets when it gets around to it.
  *
  * Hardware:
  *  * Product ID #3886 - Adafruit MPU-6050 6-DoF Accel and Gyro Sensor,
  *                       STEMMA QT Qwiic
- *  * MCU supporting I2C. Set your GPIO pin below.
+ *  * MCU supporting I2C. Set your GPIO interrupt capable pin below.
  *  * (5) jumper wires - GND, Vcc, SDA, SCL (=STEMMA QT) and INT
  *****************************************************************************/
 
@@ -30,17 +35,24 @@
 
 /* SET THIS for your MCU!
  * the GPIO pin that the 6050 INT pin is wired to */
-#define IMU_DATA_READY    9
-#define MCU_ACTIVE       10   // this pin outputs a timing mark for an o'scope
+#define IMU_DATA_READY_IRQ   9  // the interrupt capable MCU pin
+#define MCU_ACTIVE          10  // the processing timing mark for o'scope traces
+#define ISR_ACTIVE          11  // the interrupt handler's timing mark mark for o'scope traces
 
 Adafruit_MPU6050 myMpu; // our MPU is an Adafruit_Sensor device
 sensors_event_t  gyroEvent; // sensor event data objects
 sensors_event_t  acclEvent;
 sensors_event_t  tempEvent;
 
+bool there_is_new_data;     /* a flag indicating that new data
+                               has beeen posted by the ISR.
+                               Set by the ISR. Cleared by
+                               the data processing routine.  */
+
 void setup() {
-  pinMode(IMU_DATA_READY, INPUT);
+  pinMode(IMU_DATA_READY_IRQ, INPUT);
   pinMode(MCU_ACTIVE, OUTPUT);
+  pinMode(ISR_ACTIVE, OUTPUT);
   pinMode(LED_BUILTIN, OUTPUT);
   Serial.begin(9600);             // not really 9600 bps; goes USB speed
   while ((not Serial)             // wait up to 3secs for Serial port setup
@@ -51,24 +63,25 @@ void setup() {
   }
   configure_mcu_sampling();       // do all the sample timing prep
   configure_mcu_data_ready_out(); // do all the data ready signal prep
+  attachInterrupt(digitalPinToInterrupt(IMU_DATA_READY_IRQ), getImuData_ISR, FALLING);
 }
 
 void loop() {
-  check_the_mcu();  // check for new data
-  delay(1);         // do something else for a bit
+  if (there_is_new_data) process_new_imu_data();
+  delay(1);                       // do other stuff for a bit
 }
 
 /*****************************************************************************
- * Process any new MCU data.
+ * Process new MCU data.
  *****************************************************************************/
-void check_the_mcu (void) {
-  if (digitalRead(IMU_DATA_READY) != LOW) return; // data not ready
+void process_new_imu_data (void) {
   digitalWrite(MCU_ACTIVE, HIGH);   // output a signal for the o'scope
-  // we've got data!
-  /* this call reads 14 contiguous registers so we get
-     (7) W16 values: XYZ x 2 + T */
-  myMpu.getEvent(&acclEvent, &gyroEvent, &tempEvent);
+  noInterrupts(); // disable interrupt(s) while the data set is being accessed
+  // the data has already been moved from the IMU into the sensor event objects
+  // by the interrupt service routine
   plotMcuData();
+  there_is_new_data = false;
+  interrupts();   // enable interrupt(s) now that we're done with the data
   digitalWrite(MCU_ACTIVE, LOW);  // drop the o'scope signal
 }
 
@@ -113,6 +126,17 @@ void plotMcuData (void) {
     Serial.print(":");
     Serial.println(gyroEvent.acceleration.z-offset);  // and send it
   }
+}
+
+/*****************************************************************************
+ * An active interrupt interrupted background processing to run this ISR.
+ * Get the data, indicate that there is new data, and return ASAP.
+ *****************************************************************************/
+void getImuData_ISR (void) {
+  digitalWrite(ISR_ACTIVE, HIGH);
+  myMpu.getEvent(&acclEvent, &gyroEvent, &tempEvent);
+  there_is_new_data = true;
+  digitalWrite(ISR_ACTIVE, LOW);
 }
 
 /*****************************************************************************
@@ -162,6 +186,7 @@ void configure_mcu_sampling (void) {
  *****************************************************************************/
 void configure_mcu_data_ready_out (void) {
   myMpu.setInterruptPinPolarity(true);// set active low so signal goes low on DR
+  // comment out the next two lines for 50usec pulsed interrupts
   myMpu.setInterruptPinLatch(true);   // set signal to stay active until reads.
   myMpu.setClearIntrOnRead(true);     // no need to read status register to
                                       //   reset the data ready INTR signal

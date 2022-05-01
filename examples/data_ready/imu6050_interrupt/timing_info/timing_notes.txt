@@ -1,0 +1,35 @@
+The info in this folder shows how GPIO lines can be used to provide timing
+information for an oscilloscope display. Most any relatively inexpensive
+USB scope could be used for this purpose.
+
+Note: I use interrupt handler and interrupt service routine interchangeably.
+
+Please refer to the timing*.png image files.
+
+Images timeing1 & timing2 (expanded):
+------------------------------------
+The top blue trace (active high) shows the amount of time that the program is
+processing the IMU data. The red trace (ative low) shows how long the interrupt
+is active for. The interrupt is cleared by the interrupt handler's read. Note
+how the data transfer time has been transferred to the ISR.
+
+timing3*.img
+------------
+This image show the interrupt signal in relation to the ISR. The ISR is
+active immediately, the data ready signal drops when the data registers are
+read.
+
+timing4*.img
+------------
+This image shows the ISR in red and background processing in blue. There is no
+maningful background processing so the data is processed immediately after the
+ISR has staged it. This is not always the case.
+
+timeing5*.img
+-------------
+Here we commented out two lines of the interrupt configuration code to diable
+latching and clearing on any data read. By clearing latching the interrupt is
+just a 50us pulse that doesn't require clearing. Here the interrupt request
+(IRQ) is just a pulse that clears just as the handler starts to run. This is
+the simplest in terms of clearing the interrupt as long as your hardware and
+cabling supports the short pulse.
