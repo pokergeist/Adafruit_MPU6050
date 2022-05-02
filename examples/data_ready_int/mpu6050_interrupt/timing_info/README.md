@@ -9,7 +9,7 @@ Please refer to the timing*.png image files.
 ## IRQ vs. ISR
 
 This image show the interrupt signal (IRQ) in relation to the ISR/handler. The ISR is
-active immediately when the falling interrupt signal triggers the ISR. The IMU  raises the data ready signal (inactive high)  once the data registers have been read. If you want an active high IRQ, leave the interrupt as active high in the MCU configuration, and change the direction to RISING in the attachInterrupt() call.
+active immediately when the falling interrupt signal triggers the ISR. The IMU  raises the data ready signal (inactive high)  once the data registers have been read. If you want an active high IRQ, leave the interrupt as active high in the MPU configuration, and change the direction to RISING in the attachInterrupt() call.
 
 <img src="timing3_irq_isr.png" alt="IRQ ISR timing" width="600">
 
