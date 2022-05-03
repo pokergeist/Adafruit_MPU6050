@@ -201,7 +201,7 @@ private:
 
 /*!
  *    @brief  Class that stores state and functions for interacting with
- *            the MPU6050 I2C Digital Potentiometer
+ *            the MPU6050 I2C Motion Processing Unit
  */
 class Adafruit_MPU6050 {
 public:

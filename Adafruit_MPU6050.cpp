@@ -397,7 +397,6 @@ void Adafruit_MPU6050::setInterruptPinLatch(bool held) {
   int_latch.write(held);
 }
 
-
 /**************************************************************************/
 /*!
 *     @brief  Sets how the interrupt is cleared
